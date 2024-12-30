@@ -10,6 +10,7 @@ dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 8080;
 app.use(express_1.default.json());
+app.use(express_1.default.urlencoded({ extended: true }));
 app.use("/", index_js_1.default);
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
