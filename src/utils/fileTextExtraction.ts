@@ -19,10 +19,11 @@
 // };
 
 import fs from "fs";
-import * as fsp from "fs/promises";
 import path from "path";
 import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
+const WordExtractor = require('word-extractor');
+const extractor = new WordExtractor();
 
 
 /**
@@ -38,8 +39,8 @@ export const extractTextFromFile = async (filePath: string): Promise<string> => 
         return extractTextFromPdf(filePath);
     } else if (fileExtension === ".docx") {
         return extractTextFromDocx(filePath);
-    // } else if (fileExtension === ".doc") {
-    //     return extractTextFromDoc(filePath);
+    } else if (fileExtension === ".doc") {
+        return extractTextFromDoc(filePath);
     } else {
         throw new Error("Unsupported file type. Supported formats are .pdf, .doc, .docx");
     }
@@ -65,6 +66,11 @@ const extractTextFromDocx = async (filePath: string): Promise<string> => {
     const fileBuffer = fs.readFileSync(filePath);
     const result = await mammoth.extractRawText({ buffer: fileBuffer });
     return result.value; // Returns extracted text
+};
+
+const extractTextFromDoc = async (filePath: string): Promise<string> => {
+    const document = await extractor.extract(filePath);
+    return document.getBody();
 };
 
 // /**

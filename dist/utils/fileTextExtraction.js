@@ -1,38 +1,5 @@
 "use strict";
 // import textract from "textract";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -65,14 +32,11 @@ exports.extractTextFromFile = void 0;
 //     });
 // };
 const fs_1 = __importDefault(require("fs"));
-const fsp = __importStar(require("fs/promises"));
 const path_1 = __importDefault(require("path"));
 const pdf_parse_1 = __importDefault(require("pdf-parse"));
 const mammoth_1 = __importDefault(require("mammoth"));
-const getTextExtractor = () => __awaiter(void 0, void 0, void 0, function* () {
-    const { getTextExtractor } = yield Promise.resolve().then(() => __importStar(require("office-text-extractor")));
-    return getTextExtractor();
-});
+const WordExtractor = require('word-extractor');
+const extractor = new WordExtractor();
 /**
  * Extracts text from a file (.doc, .docx, .pdf).
  * @param filePath - Path to the file to extract text from.
@@ -115,14 +79,18 @@ const extractTextFromDocx = (filePath) => __awaiter(void 0, void 0, void 0, func
     const result = yield mammoth_1.default.extractRawText({ buffer: fileBuffer });
     return result.value; // Returns extracted text
 });
-/**
- * Extracts text from a DOC file.
- * @param filePath - Path to the DOC file.
- * @returns Extracted text as a string.
- */
 const extractTextFromDoc = (filePath) => __awaiter(void 0, void 0, void 0, function* () {
-    const extractor = yield getTextExtractor();
-    const fileBuffer = yield fsp.readFile(filePath);
-    const text = yield extractor.extractText({ input: fileBuffer, type: 'buffer' });
-    return text;
+    const document = yield extractor.extract(filePath);
+    return document.getBody();
 });
+// /**
+//  * Extracts text from a DOC file.
+//  * @param filePath - Path to the DOC file.
+//  * @returns Extracted text as a string.
+//  */
+// const extractTextFromDoc = async (filePath: string): Promise<string> => {
+//     const extractor = await getTextExtractor();
+//     const fileBuffer = await fsp.readFile(filePath);
+//     const text = await extractor.extractText({ input: fileBuffer, type: 'buffer' });
+//     return text;
+//   };
