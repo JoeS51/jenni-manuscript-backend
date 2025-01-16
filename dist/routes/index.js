@@ -10,14 +10,7 @@ const multer_1 = __importDefault(require("multer"));
 const router = (0, express_1.Router)();
 //for file upload
 const upload = (0, multer_1.default)({
-    storage: multer_1.default.diskStorage({
-        destination: (req, file, cb) => {
-            cb(null, "uploads/"); // Save files to the 'uploads/' directory
-        },
-        filename: (req, file, cb) => {
-            cb(null, file.originalname); // Use the original file name
-        },
-    }),
+    storage: multer_1.default.memoryStorage(), // Files are stored as Buffer in memory
 });
 router.get('/', (req, res) => {
     res.send("hello");

@@ -6,14 +6,7 @@ import multer from "multer";
 const router = Router();
 //for file upload
 const upload = multer({
-    storage: multer.diskStorage({
-        destination: (req, file, cb) => {
-            cb(null, "uploads/"); // Save files to the 'uploads/' directory
-        },
-        filename: (req, file, cb) => {
-            cb(null, file.originalname); // Use the original file name
-        },
-    }),
+    storage: multer.memoryStorage(), // Files are stored as Buffer in memory
 });
 
 router.get('/', (req, res) => {
