@@ -1,5 +1,4 @@
 "use strict";
-// import textract from "textract";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -74,18 +73,3 @@ const extractTextFromDoc = (fileBuffer) => __awaiter(void 0, void 0, void 0, fun
         throw new Error(`Failed to extract text from DOC file: ${err instanceof Error ? err.message : String(err)}`);
     }
 });
-// const extractTextFromDoc = async (filePath: string): Promise<string> => {
-//     const document = await extractor.extract(filePath);
-//     return document.getBody();
-// };
-// /**
-//  * Extracts text from a DOC file.
-//  * @param filePath - Path to the DOC file.
-//  * @returns Extracted text as a string.
-//  */
-// const extractTextFromDoc = async (filePath: string): Promise<string> => {
-//     const extractor = await getTextExtractor();
-//     const fileBuffer = await fsp.readFile(filePath);
-//     const text = await extractor.extractText({ input: fileBuffer, type: 'buffer' });
-//     return text;
-//   };

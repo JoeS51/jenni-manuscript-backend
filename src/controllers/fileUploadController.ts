@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { extractTextFromFile } from "../utils/fileTextExtraction";
 import dotenv from "dotenv";
-
+import { sendEmail } from "../utils/sendEmail";
 dotenv.config();
 
 export const uploadFile = async (req: Request & { file?: Express.Multer.File }, res: Response): Promise<void> => {
@@ -15,6 +15,12 @@ export const uploadFile = async (req: Request & { file?: Express.Multer.File }, 
         const fileBuffer = req.file.buffer; // File is in memory
         const fileExtension = req.file.originalname.split(".").pop(); // Get file extension
         const extractedText = await extractTextFromFile(fileBuffer, `.${fileExtension}`);
+
+        // Uncomment to send email
+        // const email = "joesluis51@gmail.com";
+        // const subject = "test ai manuscript";
+        // const text = "Hello this is a test email";
+        // await sendEmail(email, subject, text);
 
         res.status(200).json({
             message: "File uploaded and text extracted successfully",
