@@ -21,10 +21,18 @@ export const uploadFile = async (req: Request & { file?: Express.Multer.File }, 
 
         // Uncomment to send email
         if (req.body.email) {
-            const email = req.body.email;
-            const subject = "test ai manuscript";
-            const text = "Hello this is a test email";
-            await sendEmail(email, subject, text);
+            try {
+                const email = req.body.email;
+                const subject = "test ai manuscript";
+                const text = "Hello this is a test email";
+                await sendEmail(email, subject, text);
+            } catch (err) {
+                console.error("Error sending email:", err);
+                res.status(500).json({
+                    message: "Error sending email",
+                    error: err instanceof Error ? err.message : String(err),
+                });
+            }
         }
 
         res.status(200).json({

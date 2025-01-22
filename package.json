@@ -22,6 +22,7 @@
     "nodemailer": "^6.9.16",
     "pdf-parse": "^1.1.1",
     "textract": "^2.5.0",
+    "validator": "^13.12.0",
     "word-extractor": "^1.0.4"
   },
   "devDependencies": {
@@ -32,6 +33,7 @@
     "@types/nodemailer": "^6.4.17",
     "@types/pdf-parse": "^1.1.4",
     "@types/textract": "^2.4.5",
+    "@types/validator": "^13.12.2",
     "@types/word-extractor": "^1.0.6",
     "typescript": "^5.7.2"
   }

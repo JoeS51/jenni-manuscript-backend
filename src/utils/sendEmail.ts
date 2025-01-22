@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import validator from 'validator';
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -11,6 +12,10 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendEmail = async (to: string, subject: string, text: string) => {
+    if (!validator.isEmail(to)) {
+        throw new Error('Invalid email address');
+    }
+
     const info = await transporter.sendMail({
         from: 'manuscriptairesponse@gmail.com',
         to,
