@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.uploadFile = void 0;
 const fileTextExtraction_1 = require("../utils/fileTextExtraction");
 const dotenv_1 = __importDefault(require("dotenv"));
-const sendEmail_1 = require("../utils/sendEmail");
 dotenv_1.default.config();
 const uploadFile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (!req.file) {
@@ -27,10 +26,13 @@ const uploadFile = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         const fileBuffer = req.file.buffer; // File is in memory
         const fileExtension = req.file.originalname.split(".").pop(); // Get file extension
         const extractedText = yield (0, fileTextExtraction_1.extractTextFromFile)(fileBuffer, `.${fileExtension}`);
-        const email = "joesluis51@gmail.com";
-        const subject = "test ai manuscript";
-        const text = "Hello this is a test email";
-        yield (0, sendEmail_1.sendEmail)(email, subject, text);
+        console.log("HERERERERER");
+        console.log(req.body.email);
+        // Uncomment to send email
+        // const email = "joesluis51@gmail.com";
+        // const subject = "test ai manuscript";
+        // const text = "Hello this is a test email";
+        // await sendEmail(email, subject, text);
         res.status(200).json({
             message: "File uploaded and text extracted successfully",
             file: {

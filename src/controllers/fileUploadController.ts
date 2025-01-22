@@ -16,11 +16,16 @@ export const uploadFile = async (req: Request & { file?: Express.Multer.File }, 
         const fileExtension = req.file.originalname.split(".").pop(); // Get file extension
         const extractedText = await extractTextFromFile(fileBuffer, `.${fileExtension}`);
 
+        console.log("HERERERERER");
+        console.log(req.body.email)
+
         // Uncomment to send email
-        // const email = "joesluis51@gmail.com";
-        // const subject = "test ai manuscript";
-        // const text = "Hello this is a test email";
-        // await sendEmail(email, subject, text);
+        if (req.body.email) {
+            const email = req.body.email;
+            const subject = "test ai manuscript";
+            const text = "Hello this is a test email";
+            await sendEmail(email, subject, text);
+        }
 
         res.status(200).json({
             message: "File uploaded and text extracted successfully",
