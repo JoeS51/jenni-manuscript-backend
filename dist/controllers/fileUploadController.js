@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -15,8 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.uploadFile = void 0;
 const fileTextExtraction_1 = require("../utils/fileTextExtraction");
 const dotenv_1 = __importDefault(require("dotenv"));
+const sendEmail_1 = require("../utils/sendEmail");
+const openAIFunctions_1 = require("../utils/openAIFunctions");
+const pdfOutput_1 = require("../utils/pdfOutput");
 dotenv_1.default.config();
-const uploadFile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const uploadFile = async (req, res) => {
     if (!req.file) {
         res.status(400).send({ message: "No file uploaded" });
         return;
@@ -25,22 +19,36 @@ const uploadFile = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         // Extract text from the file buffer directly
         const fileBuffer = req.file.buffer; // File is in memory
         const fileExtension = req.file.originalname.split(".").pop(); // Get file extension
-        const extractedText = yield (0, fileTextExtraction_1.extractTextFromFile)(fileBuffer, `.${fileExtension}`);
-        console.log("HERERERERER");
-        console.log(req.body.email);
+        const extractedText = await (0, fileTextExtraction_1.extractTextFromFile)(fileBuffer, `.${fileExtension}`);
+        // retrieve API output
+        const journalType = req.body.journalType;
+        const manuscriptEvaluationText = await (0, openAIFunctions_1.evaluateManuscript)(fileTextExtraction_1.extractTextFromFile, journalType);
         // Uncomment to send email
-        // const email = "joesluis51@gmail.com";
-        // const subject = "test ai manuscript";
-        // const text = "Hello this is a test email";
-        // await sendEmail(email, subject, text);
+        if (req.body.email) {
+            try {
+                const email = req.body.email;
+                const subject = "test ai manuscript";
+                const text = "Hello this is a test email";
+                const outputPdf = await (0, pdfOutput_1.createPDFFromText)(manuscriptEvaluationText.generalFeedback);
+                await (0, sendEmail_1.sendEmailWithPDF)(email, subject, "feedback", outputPdf);
+            }
+            catch (err) {
+                console.error("Error sending email:", err);
+                res.status(500).json({
+                    message: "Error sending email",
+                    error: err instanceof Error ? err.message : String(err),
+                });
+            }
+        }
         res.status(200).json({
-            message: "File uploaded and text extracted successfully",
+            message: "File uploaded, text extracted, and email sent successfully",
             file: {
                 originalname: req.file.originalname,
                 mimetype: req.file.mimetype,
                 size: req.file.size,
             },
             text: extractedText, // Extracted text
+            evaluatedText: manuscriptEvaluationText, //evaluated text
         });
     }
     catch (err) {
@@ -60,5 +68,5 @@ const uploadFile = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             });
         }
     }
-});
+};
 exports.uploadFile = uploadFile;

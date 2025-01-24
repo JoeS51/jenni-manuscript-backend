@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import { extractTextFromFile } from "../utils/fileTextExtraction";
 import dotenv from "dotenv";
-import { sendEmail } from "../utils/sendEmail";
+import { sendEmailWithPDF } from "../utils/sendEmail";
+import { evaluateManuscript } from "../utils/openAIFunctions";
+import { createPDFFromText } from "../utils/pdfOutput";
+
 dotenv.config();
 
 export const uploadFile = async (req: Request & { file?: Express.Multer.File }, res: Response): Promise<void> => {
@@ -16,16 +19,17 @@ export const uploadFile = async (req: Request & { file?: Express.Multer.File }, 
         const fileExtension = req.file.originalname.split(".").pop(); // Get file extension
         const extractedText = await extractTextFromFile(fileBuffer, `.${fileExtension}`);
 
-        console.log("HERERERERER");
-        console.log(req.body.email)
-
+        // retrieve API output
+        const journalType = req.body.journalType
+        const manuscriptEvaluationText = await evaluateManuscript(extractTextFromFile, journalType)
         // Uncomment to send email
         if (req.body.email) {
             try {
                 const email = req.body.email;
                 const subject = "test ai manuscript";
                 const text = "Hello this is a test email";
-                await sendEmail(email, subject, text);
+                const outputPdf = await createPDFFromText(manuscriptEvaluationText.generalFeedback);
+                await sendEmailWithPDF(email, subject, "feedback", outputPdf);
             } catch (err) {
                 console.error("Error sending email:", err);
                 res.status(500).json({
@@ -36,13 +40,14 @@ export const uploadFile = async (req: Request & { file?: Express.Multer.File }, 
         }
 
         res.status(200).json({
-            message: "File uploaded and text extracted successfully",
+            message: "File uploaded, text extracted, and email sent successfully",
             file: {
                 originalname: req.file.originalname,
                 mimetype: req.file.mimetype,
                 size: req.file.size,
             },
             text: extractedText, // Extracted text
+            evaluatedText: manuscriptEvaluationText, //evaluated text
         });
     } catch (err) {
         // Narrowing 'err' to Error
