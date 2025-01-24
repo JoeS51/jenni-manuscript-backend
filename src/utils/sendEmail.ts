@@ -25,4 +25,23 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
     return info;
 }
 
+export const sendEmailWithPDF = async (to: string, subject: string, text: string, pdfBuffer: Buffer, filename: string = 'document.pdf') => {
+    if (!validator.isEmail(to)) {
+        throw new Error('Invalid email address');
+    }
+
+    const info = await transporter.sendMail({
+        from: 'manuscriptairesponse@gmail.com',
+        to,
+        subject,
+        text,
+        attachments: [{
+            filename: filename,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+        }]
+    });
+    return info;
+}
+
 export default transporter;
