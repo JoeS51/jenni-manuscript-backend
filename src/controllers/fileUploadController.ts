@@ -21,7 +21,7 @@ export const uploadFile = async (req: Request & { file?: Express.Multer.File }, 
 
         // retrieve API output
         const journalType = req.body.journalType
-        const manuscriptEvaluationText = await evaluateManuscript(extractTextFromFile, journalType)
+        const manuscriptEvaluationText = await evaluateManuscript(extractedText, journalType)
         // Uncomment to send email
         if (req.body.email) {
             try {
