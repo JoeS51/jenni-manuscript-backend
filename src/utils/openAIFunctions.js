@@ -8,18 +8,20 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY, // Ensure your API key is correctly loaded
 });
 
-const model = "gpt-4o-mini"
+const model = "gpt-4o-mini";
+// Ensure supported journal types are sustained here.
 const journalRequirements = {
-    "Journal A": ["Abstract", "Introduction", "Methods", "Results", "Discussion"],
-    "Journal B": ["Abstract", "Background", "Study Design", "Findings", "Conclusion"],
+    "IEEE": ["Abstract", "Introduction", "Methods", "Results", "Discussion"],
+    "Nature": ["Abstract", "Background", "Study Design", "Findings", "Conclusion"],
+    "Lancet": ["Abstract", "Background", "Study Design", "Findings", "Conclusion"]
 };
 
-//entry point for validation
+// Entry point for validation
 async function evaluateManuscript(manuscriptText, journalType) {
     try {
         const [sectionValidation, generalFeedback] = await Promise.all([
             validateSections(manuscriptText, journalType),
-            getGeneralFeedback(manuscriptText),
+            getGeneralFeedback(manuscriptText, journalType),
         ]);
 
         return {
@@ -47,7 +49,6 @@ async function validateSections(manuscriptText, journalType) {
         ${manuscriptText}
     `;
 
-    // Updated API call
     const response = await openai.chat.completions.create({
         model: model,
         messages: [{ role: "user", content: prompt }],
@@ -57,20 +58,31 @@ async function validateSections(manuscriptText, journalType) {
 }
 
 // Get general feedback on grammar, clarity, and overall quality
-async function getGeneralFeedback(manuscriptText) {
-    const prompt = `
-        Please provide detailed feedback on the manuscript below. Focus on grammar, spelling, clarity, and overall writing quality. Highlight any areas that need improvement or clarification for each section. 
+async function getGeneralFeedback(manuscriptText, journalType) {
+    let prompt = ""; // Ensure prompt is always initialized
 
-        For example:
-        - **Abstract**: The abstract effectively summarizes the main findings but contains a minor grammar issue in the first sentence ("The study were conducted" should be "The study was conducted"). Additionally, it lacks specific numerical results, which would improve its clarity.
-        - **Introduction**: The introduction provides good background information but is overly verbose in the second paragraph. Consider removing redundant sentences like "This has been previously studied multiple times, as mentioned earlier."
-        - **Methods**: The description of the experimental setup is clear but missing key details about the sample size and statistical methods used.
-        
+    if (journalType === "IEEE") {
+        prompt = `
+        Please provide detailed feedback on the manuscript below for IEEE standards. Focus on grammar, spelling, clarity, and overall writing quality. Highlight any areas that need improvement or clarification for each section.
         Manuscript:
         ${manuscriptText}
-    `;
+        `;
+    } else if (journalType === "Nature") {
+        prompt = `
+        Provide a critical review of the manuscript according to Nature journal standards. Address structure, clarity, grammar, and scientific accuracy. Suggest improvements where needed.
+        Manuscript:
+        ${manuscriptText}
+        `;
+    } else if (journalType === "Lancet") {
+        prompt = `
+        Provide a detailed review of the manuscript for Lancet standards. Ensure clarity, logical flow, grammar, and writing quality. Highlight strengths and areas for improvement.
+        Manuscript:
+        ${manuscriptText}
+        `;
+    } else {
+        throw new Error(`Unsupported journal type: ${journalType}`);
+    }
 
-    // Updated API call
     const response = await openai.chat.completions.create({
         model: model,
         messages: [{ role: "user", content: prompt }],

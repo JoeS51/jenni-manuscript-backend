@@ -22,7 +22,7 @@ const uploadFile = async (req, res) => {
         const extractedText = await (0, fileTextExtraction_1.extractTextFromFile)(fileBuffer, `.${fileExtension}`);
         // retrieve API output
         const journalType = req.body.journalType;
-        const manuscriptEvaluationText = await (0, openAIFunctions_1.evaluateManuscript)(fileTextExtraction_1.extractTextFromFile, journalType);
+        const manuscriptEvaluationText = await (0, openAIFunctions_1.evaluateManuscript)(extractedText, journalType);
         // Uncomment to send email
         if (req.body.email) {
             try {
