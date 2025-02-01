@@ -3,9 +3,11 @@ import { extractTextFromFile } from "../utils/fileTextExtraction";
 import dotenv from "dotenv";
 import { sendEmailWithPDF } from "../utils/sendEmail";
 import { evaluateManuscript } from "../utils/openAIFunctions";
-import { createPDFFromText } from "../utils/pdfOutput";
+import { createPDFFromText, createPDFFromTextWithGeneralFeedbackAndSectionValidation } from "../utils/pdfOutput";
 
 dotenv.config();
+
+const MAX_PAGE_LIMIT = 25;
 
 export const uploadFile = async (req: Request & { file?: Express.Multer.File }, res: Response): Promise<void> => {
     if (!req.file) {
@@ -16,19 +18,21 @@ export const uploadFile = async (req: Request & { file?: Express.Multer.File }, 
     try {
         // Extract text from the file buffer directly
         const fileBuffer = req.file.buffer; // File is in memory
+
         const fileExtension = req.file.originalname.split(".").pop(); // Get file extension
-        const extractedText = await extractTextFromFile(fileBuffer, `.${fileExtension}`);
+        const extractedText = await extractTextFromFile(fileBuffer, `.${fileExtension}`, MAX_PAGE_LIMIT);
 
         // retrieve API output
         const journalType = req.body.journalType
+
         const manuscriptEvaluationText = await evaluateManuscript(extractedText, journalType)
+        
         // Uncomment to send email
         if (req.body.email) {
             try {
                 const email = req.body.email;
                 const subject = "test ai manuscript";
-                const text = "Hello this is a test email";
-                const outputPdf = await createPDFFromText(manuscriptEvaluationText.generalFeedback);
+                const outputPdf = await createPDFFromTextWithGeneralFeedbackAndSectionValidation(manuscriptEvaluationText.generalFeedback, manuscriptEvaluationText.sectionValidation);
                 await sendEmailWithPDF(email, subject, "feedback", outputPdf);
             } catch (err) {
                 console.error("Error sending email:", err);
@@ -52,9 +56,8 @@ export const uploadFile = async (req: Request & { file?: Express.Multer.File }, 
     } catch (err) {
         // Narrowing 'err' to Error
         if (err instanceof Error) {
-            console.error("Error extracting text:", err.message);
             res.status(500).json({
-                message: "Error extracting text from file",
+                message: "Error generating feedback for file",
                 error: err.message,
             });
         } else {

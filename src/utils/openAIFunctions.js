@@ -16,7 +16,8 @@ const journalRequirements = {
     "Lancet": ["Abstract", "Background", "Study Design", "Findings", "Conclusion"]
 };
 
-// Entry point for validation
+// Entry point for validation.
+// returns 2 strings: sectionValidation and generalFeedback
 async function evaluateManuscript(manuscriptText, journalType) {
     try {
         const [sectionValidation, generalFeedback] = await Promise.all([
