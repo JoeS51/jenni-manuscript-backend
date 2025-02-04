@@ -1,4 +1,6 @@
 import { chromium } from 'playwright';
+import PDFDocument from 'pdfkit';
+
 
 /**
  * Creates a properly formatted PDF document from HTML content using Playwright.
@@ -41,40 +43,40 @@ export async function createPDFFromText(htmlContent: string): Promise<Buffer> {
  * @returns Buffer containing the generated PDF.
  */
 export async function createPDFFromTextWithGeneralFeedbackAndSectionValidation(generalFeedback: string, sectionValidation: string): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-        try {
-            const doc = new PDFDocument();
-            const chunks: Buffer[] = [];
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument();
+      const chunks: Buffer[] = [];
 
-            // Capture PDF data in chunks
-            doc.on('data', (chunk) => chunks.push(chunk));
-            doc.on('end', () => resolve(Buffer.concat(chunks)));
+      // Capture PDF data in chunks
+      doc.on('data', (chunk: any) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
 
-            // Title
-            doc.fontSize(18).text('Manuscript Feedback', { align: 'center' });
-            doc.moveDown(1.5);
+      // Title
+      doc.fontSize(18).text('Manuscript Feedback', { align: 'center' });
+      doc.moveDown(1.5);
 
-            // General Feedback Section
-            doc.fontSize(14).fillColor('blue').text('General Feedback', { underline: true });
-            doc.moveDown(0.5);
-            doc.fontSize(12).fillColor('black').text(generalFeedback, {
-                align: 'left',
-                lineGap: 5
-            });
-            doc.moveDown(1);
+      // General Feedback Section
+      doc.fontSize(14).fillColor('blue').text('General Feedback', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(12).fillColor('black').text(generalFeedback, {
+        align: 'left',
+        lineGap: 5
+      });
+      doc.moveDown(1);
 
-            // Specific Feedback Section
-            doc.fontSize(14).fillColor('blue').text('Validation of Required Sections', { underline: true });
-            doc.moveDown(0.5);
-            doc.fontSize(12).fillColor('black').text(sectionValidation, {
-                align: 'left',
-                lineGap: 5
-            });
+      // Specific Feedback Section
+      doc.fontSize(14).fillColor('blue').text('Validation of Required Sections', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(12).fillColor('black').text(sectionValidation, {
+        align: 'left',
+        lineGap: 5
+      });
 
-            // Finalize PDF
-            doc.end();
-        } catch (error) {
-            reject(error);
-        }
-    });
+      // Finalize PDF
+      doc.end();
+    } catch (error) {
+      reject(error);
+    }
+  });
 }
