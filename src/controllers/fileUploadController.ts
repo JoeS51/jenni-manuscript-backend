@@ -7,6 +7,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const MAX_PAGE_LIMIT = 25;
+
 export const uploadFile = async (req: Request & { file?: Express.Multer.File }, res: Response): Promise<void> => {
     if (!req.file) {
         res.status(400).send({ message: "No file uploaded" });

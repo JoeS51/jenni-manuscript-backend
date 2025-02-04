@@ -50,7 +50,7 @@ async function validateSections(manuscriptText, journalType, requiredSections) {
         });
 
         let result = (_b = (_a = response.choices[0]) === null || _a === void 0 ? void 0 : _a.message) === null || _b === void 0 ? void 0 : _b.content.trim();
-        
+
         if (!result) {
             console.warn("OpenAI returned an empty response for validateSections.");
             result = "**Error: Could not process manuscript validation.**";
