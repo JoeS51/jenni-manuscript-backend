@@ -23,7 +23,7 @@ const sendEmail = async (to, subject, text) => {
         from: 'manuscriptairesponse@gmail.com',
         to,
         subject,
-        text
+        text: "Your manuscript evaluation is attached."
     });
     return info;
 };
@@ -36,7 +36,7 @@ const sendEmailWithPDF = async (to, subject, text, pdfBuffer, filename = 'docume
         from: 'manuscriptairesponse@gmail.com',
         to,
         subject,
-        text,
+        text: "Your manuscript evaluation is attached.",
         attachments: [{
                 filename: filename,
                 content: pdfBuffer,

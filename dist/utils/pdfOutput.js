@@ -1,31 +1,36 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createPDFFromText = createPDFFromText;
-const pdfkit_1 = __importDefault(require("pdfkit"));
+const playwright_1 = require("playwright");
 /**
- * Creates a PDF document from the provided text input
- * @param text - The text content to be added to the PDF
- * @returns Buffer containing the generated PDF
+ * Creates a properly formatted PDF document from HTML content using Playwright.
+ * @param htmlContent - The HTML content to be converted into a PDF.
+ * @returns A Promise that resolves to a Buffer containing the generated PDF.
  */
-async function createPDFFromText(text) {
-    return new Promise((resolve, reject) => {
-        try {
-            const doc = new pdfkit_1.default();
-            const chunks = [];
-            doc.on('data', (chunk) => chunks.push(chunk));
-            doc.on('end', () => resolve(Buffer.concat(chunks)));
-            doc.fontSize(12)
-                .text(text, {
-                align: 'left',
-                lineGap: 5
-            });
-            doc.end();
-        }
-        catch (error) {
-            reject(error);
-        }
-    });
+async function createPDFFromText(htmlContent) {
+    // Launch the Chromium browser in headless mode.
+    const browser = await playwright_1.chromium.launch({ headless: true });
+    try {
+        // Create a new browser context and page.
+        const context = await browser.newContext();
+        const page = await context.newPage();
+        // Set the HTML content for the page and wait for network to be idle.
+        await page.setContent(htmlContent, { waitUntil: 'networkidle' });
+        // Generate the PDF with desired options.
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true, // Ensures that background colors and images are included.
+        });
+        // Close the browser context.
+        await context.close();
+        return pdfBuffer;
+    }
+    catch (error) {
+        console.error("🚨 Error generating PDF:", error);
+        throw error;
+    }
+    finally {
+        // Ensure the browser is closed.
+        await browser.close();
+    }
 }
