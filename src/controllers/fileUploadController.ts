@@ -19,23 +19,20 @@ export const uploadFile = async (req: Request & { file?: Express.Multer.File }, 
         // Extract text from uploaded file
         const fileBuffer = req.file.buffer;
         const fileExtension = req.file.originalname.split(".").pop();
-        const extractedText = await extractTextFromFile(fileBuffer, `.${fileExtension}`);
+        const extractedText = await extractTextFromFile(fileBuffer, `.${fileExtension}`, MAX_PAGE_LIMIT);
 
         // Retrieve AI output
         const journalType = req.body.journalType;
         const manuscriptEvaluationText = await evaluateManuscript(extractedText, journalType);
 
-        // Debugging Log: Print Full Response
-        console.log("DEBUG: Manuscript Evaluation Response =", manuscriptEvaluationText);
-
         // Ensure we have the expected output format
         if (!manuscriptEvaluationText || typeof manuscriptEvaluationText !== "object") {
-            console.error("🚨 Error: Invalid response format from evaluateManuscript.");
+            console.error("Error: Invalid response format from evaluateManuscript.");
             throw new Error("Expected an object but received something else.");
         }
 
         if (!manuscriptEvaluationText.generalFeedback) {
-            console.error("🚨 Error: 'generalFeedback' is missing from AI response.");
+            console.error("Error: 'generalFeedback' is missing from AI response.");
             throw new Error("Expected 'generalFeedback' key but it's missing.");
         }
 
