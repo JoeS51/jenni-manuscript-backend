@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { createReply } from '../controllers/chatController';
+//import { createReply } from '../controllers/chatController';
 import { uploadFile } from '../controllers/fileUploadController';
 import multer from "multer";
 
@@ -14,7 +14,7 @@ router.get('/', (req, res) => {
 });
 
 
-router.post('/chat', createReply)
+//router.post('/chat', createReply)
 
 
 router.post("/upload", upload.single('file'), uploadFile);

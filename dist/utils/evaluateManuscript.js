@@ -9,6 +9,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const openAIFunctions_1 = require("./openAIFunctions");
 Object.defineProperty(exports, "convertMarkdownToHTML", { enumerable: true, get: function () { return openAIFunctions_1.convertMarkdownToHTML; } });
+const openAIStreaming_1 = require("./openAIStreaming");
 // Supported journal sections
 const journalRequirements = {
     IEEE: ["Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"],
@@ -22,26 +23,20 @@ const journalRequirements = {
  * @param journalType - The type of journal (IEEE, Nature, Lancet).
  * @returns An object containing structured feedback.
  */
-async function evaluateManuscript(manuscriptText, journalType) {
+async function evaluateManuscript(manuscriptText, journalType, callback) {
     try {
         if (!journalRequirements[journalType]) {
             throw new Error(`Unsupported journal type: ${journalType}`);
         }
-        console.log(`Evaluating manuscript for journal type: ${journalType}`);
         const [sectionValidation, generalFeedback] = await Promise.all([
             (0, openAIFunctions_1.validateSections)(manuscriptText, journalType, journalRequirements[journalType]).catch((err) => {
-                console.error("Error in validateSections:", err);
                 return "**Error: Section validation failed.**"; // Always returns a string
             }),
-            (0, openAIFunctions_1.getGeneralFeedback)(manuscriptText, journalType).catch((err) => {
-                console.error("Error in getGeneralFeedback:", err);
+            (0, openAIStreaming_1.getGeneralFeedbackStreamed)(manuscriptText, journalType, callback).catch((err) => {
                 return "**Error: Could not generate general feedback.**"; // Always returns a string
             }),
         ]);
-        console.log("DEBUG: Section Validation =", sectionValidation);
-        console.log("DEBUG: General Feedback =", generalFeedback);
         if (!sectionValidation || !generalFeedback) {
-            console.error("🚨 Error: One of the AI responses is missing.");
             throw new Error("Manuscript evaluation response is incomplete.");
         }
         return {
@@ -54,7 +49,6 @@ async function evaluateManuscript(manuscriptText, journalType) {
         };
     }
     catch (error) {
-        console.error("🚨 Error evaluating manuscript:", error);
         return {
             sectionValidation: "**Error: Evaluation failed.**",
             generalFeedback: "**Error: Evaluation failed.**",

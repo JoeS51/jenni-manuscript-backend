@@ -2,7 +2,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 
-import { validateSections, getGeneralFeedback, convertMarkdownToHTML } from "./openAIFunctions";
+import { validateSections, /*getGeneralFeedback,*/ convertMarkdownToHTML } from "./openAIFunctions";
+import { getGeneralFeedbackStreamed } from "./openAIStreaming";
 
 // Define the structure of the evaluation result.
 export interface EvaluationResult {
@@ -30,7 +31,8 @@ const journalRequirements: Record<string, string[]> = {
  */
 export async function evaluateManuscript(
   manuscriptText: string,
-  journalType: string
+  journalType: string,
+  callback: (response: string, content: string) => void,
 ): Promise<EvaluationResult> {
   try {
     if (!journalRequirements[journalType]) {
@@ -42,7 +44,7 @@ export async function evaluateManuscript(
       validateSections(manuscriptText, journalType, journalRequirements[journalType]).catch((err: any) => {
         return "**Error: Section validation failed.**"; // Always returns a string
       }),
-      getGeneralFeedback(manuscriptText, journalType).catch((err: any) => {
+      getGeneralFeedbackStreamed(manuscriptText, journalType, callback).catch((err: any) => {
         return "**Error: Could not generate general feedback.**"; // Always returns a string
       }),
     ]);
