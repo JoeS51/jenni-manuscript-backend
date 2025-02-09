@@ -13,12 +13,16 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "bull": "^4.16.5",
     "cors": "^2.8.5",
+    "cron": "^3.5.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "file-saver": "^2.0.5",
     "groq-sdk": "^0.9.1",
     "ioredis": "^5.4.2",
+    "jszip": "^3.10.1",
     "mammoth": "^1.9.0",
     "markdown-it": "^14.1.0",
     "marked": "^15.0.6",
@@ -39,6 +43,7 @@
     }
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/multer": "^1.4.12",

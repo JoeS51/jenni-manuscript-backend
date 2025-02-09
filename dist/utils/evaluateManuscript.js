@@ -27,21 +27,15 @@ async function evaluateManuscript(manuscriptText, journalType) {
         if (!journalRequirements[journalType]) {
             throw new Error(`Unsupported journal type: ${journalType}`);
         }
-        console.log(`Evaluating manuscript for journal type: ${journalType}`);
         const [sectionValidation, generalFeedback] = await Promise.all([
             (0, openAIFunctions_1.validateSections)(manuscriptText, journalType, journalRequirements[journalType]).catch((err) => {
-                console.error("Error in validateSections:", err);
                 return "**Error: Section validation failed.**"; // Always returns a string
             }),
             (0, openAIFunctions_1.getGeneralFeedback)(manuscriptText, journalType).catch((err) => {
-                console.error("Error in getGeneralFeedback:", err);
                 return "**Error: Could not generate general feedback.**"; // Always returns a string
             }),
         ]);
-        console.log("DEBUG: Section Validation =", sectionValidation);
-        console.log("DEBUG: General Feedback =", generalFeedback);
         if (!sectionValidation || !generalFeedback) {
-            console.error("🚨 Error: One of the AI responses is missing.");
             throw new Error("Manuscript evaluation response is incomplete.");
         }
         return {
@@ -54,7 +48,6 @@ async function evaluateManuscript(manuscriptText, journalType) {
         };
     }
     catch (error) {
-        console.error("🚨 Error evaluating manuscript:", error);
         return {
             sectionValidation: "**Error: Evaluation failed.**",
             generalFeedback: "**Error: Evaluation failed.**",
