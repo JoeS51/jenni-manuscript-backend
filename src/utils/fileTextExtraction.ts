@@ -32,7 +32,7 @@ export const extractTextFromFile = async (fileBuffer: Buffer, fileExtension: str
 
 /**
  * Extracts text from a PDF file buffer.
- * @param fileBuffer - Buffer of the PDF file.
+ * @param fileBuffer - Buffer of the PDF file
  * @returns Extracted text as a string.
  */
 const extractTextFromPdf = async (fileBuffer: Buffer, max_pages: number = 20): Promise<string> => {
