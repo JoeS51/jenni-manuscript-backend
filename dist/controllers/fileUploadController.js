@@ -10,6 +10,7 @@ const evaluateManuscript_1 = require("../utils/evaluateManuscript");
 const pdfOutput_1 = require("../utils/pdfOutput");
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
+const MAX_PAGE_LIMIT = 25;
 const uploadFile = async (req, res) => {
     if (!req.file) {
         res.status(400).send({ message: "No file uploaded" });
@@ -19,19 +20,17 @@ const uploadFile = async (req, res) => {
         // Extract text from uploaded file
         const fileBuffer = req.file.buffer;
         const fileExtension = req.file.originalname.split(".").pop();
-        const extractedText = await (0, fileTextExtraction_1.extractTextFromFile)(fileBuffer, `.${fileExtension}`);
+        const extractedText = await (0, fileTextExtraction_1.extractTextFromFile)(fileBuffer, `.${fileExtension}`, MAX_PAGE_LIMIT);
         // Retrieve AI output
         const journalType = req.body.journalType;
         const manuscriptEvaluationText = await (0, evaluateManuscript_1.evaluateManuscript)(extractedText, journalType);
-        // Debugging Log: Print Full Response
-        console.log("DEBUG: Manuscript Evaluation Response =", manuscriptEvaluationText);
         // Ensure we have the expected output format
         if (!manuscriptEvaluationText || typeof manuscriptEvaluationText !== "object") {
-            console.error("🚨 Error: Invalid response format from evaluateManuscript.");
+            console.error("Error: Invalid response format from evaluateManuscript.");
             throw new Error("Expected an object but received something else.");
         }
         if (!manuscriptEvaluationText.generalFeedback) {
-            console.error("🚨 Error: 'generalFeedback' is missing from AI response.");
+            console.error("Error: 'generalFeedback' is missing from AI response.");
             throw new Error("Expected 'generalFeedback' key but it's missing.");
         }
         // ✅ Convert AI Markdown to Proper HTML

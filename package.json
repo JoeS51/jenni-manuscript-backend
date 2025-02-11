@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/multer": "^1.4.12",
@@ -26,10 +27,13 @@
     "@types/word-extractor": "^1.0.6",
     "bull": "^4.16.5",
     "cors": "^2.8.5",
+    "cron": "^3.5.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "file-saver": "^2.0.5",
     "groq-sdk": "^0.9.1",
     "ioredis": "^5.4.2",
+    "jszip": "^3.10.1",
     "mammoth": "^1.9.0",
     "markdown-it": "^14.1.0",
     "marked": "^15.0.6",
@@ -50,6 +54,19 @@
     }
   },
   "devDependencies": {
+
+    "@types/adm-zip": "^0.5.7",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.10.2",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.17",
+    "@types/pdf-parse": "^1.1.4",
+    "@types/pdfkit": "^0.13.8",
+    "@types/textract": "^2.4.5",
+    "@types/validator": "^13.12.2",
+    "@types/word-extractor": "^1.0.6",
     "typescript": "^5.7.2"
   }
 }

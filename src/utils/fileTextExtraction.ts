@@ -1,79 +1,108 @@
 import pdfParse from "pdf-parse";
-import mammoth from "mammoth";
-import WordExtractor from 'word-extractor';
-
-// import countPages from "page-count";
-// import { DocxCounter, OdtCounter, PdfCounter, PptxCounter } from "page-count";
-// const countPages = require('page-counter')
-
-const extractor = new WordExtractor();
-
+import JSZip from "jszip";
+import { extname } from "path";
 
 /**
- * Extracts text from a file buffer (.doc, .docx, .pdf).
+ * Extracts text from a file buffer (.pdf, .tex/.tec, .zip).
  * @param fileBuffer - The buffer of the file to extract text from.
  * @param fileExtension - The file extension of the uploaded file.
- * @param max_pages - the maximum number of pages for this file, default 20.
+ * @param max_pages - The maximum number of pages for PDFs, default is 20.
  * @returns Extracted text as a string.
- * @throws Error if file type is unsupported or extraction fails or the number of pages in file is >m ax_pages
+ * @throws Error if the file type is unsupported or exceeds the max page limit.
  */
-export const extractTextFromFile = async (fileBuffer: Buffer, fileExtension: string, max_pages: number = 20): Promise<string> => {
-    const extension = fileExtension.toLowerCase();
-    if (extension === ".pdf") {
-        return extractTextFromPdf(fileBuffer, max_pages);
-    } else if (extension === ".docx") {
-        return extractTextFromDocx(fileBuffer, max_pages);
-    } else if (extension === ".doc") {
-        return extractTextFromDoc(fileBuffer, max_pages);
-    } else {
-        throw new Error("Unsupported file type. Supported formats are .pdf, .doc, .docx");
-    }
-};
+export const extractTextFromFile = async (
+  fileBuffer: Buffer,
+  fileExtension: string,
+  max_pages: number = 20
+): Promise<string> => {
+  // Remove a leading dot if present, then convert to lowercase
+  const extension = fileExtension.replace(/^\./, "").toLowerCase();
 
+  switch (extension) {
+    case "pdf":
+      return extractTextFromPdf(fileBuffer, max_pages);
+    case "tex":
+    case "tec":
+    case "latex":
+      return extractTextFromLatex(fileBuffer);
+    case "zip":
+      return extractTextFromZip(fileBuffer);
+    default:
+      throw new Error("Unsupported file type. Supported formats are .pdf, .tex/.tec/.latex, and .zip");
+  }
+};
 /**
  * Extracts text from a PDF file buffer.
- * @param fileBuffer - Buffer of the PDF file
+ * @param fileBuffer - Buffer of the PDF file.
+ * @param max_pages - Maximum allowed pages.
  * @returns Extracted text as a string.
+ * @throws Error if the PDF exceeds the page limit or parsing fails.
  */
 const extractTextFromPdf = async (fileBuffer: Buffer, max_pages: number = 20): Promise<string> => {
+  try {
     const data = await pdfParse(fileBuffer);
-    console.log(data.numpages)
     if (data.numpages > max_pages) {
-        throw new Error(`Error: PDF exceeds the ${max_pages}-page limit (Detected: ${data.numpages} pages).`);
+      throw new Error(`Error: PDF exceeds the ${max_pages}-page limit (Detected: ${data.numpages} pages).`);
     }
-    return data.text; // Returns extracted text
+    return data.text.trim();
+  } catch (error) {
+    throw new Error("Failed to extract text from PDF: " + error);
+  }
 };
 
 /**
- * Extracts text from a DOCX file buffer.
- * @param fileBuffer - Buffer of the DOCX file.
- * @returns Extracted text as a string.
+ * Extracts text from a LaTeX (.tex or .tec) file buffer.
+ * This version preserves most LaTeX commands and environments to retain context,
+ * removing only comments and extraneous whitespace.
+ * @param fileBuffer - Buffer of the LaTeX file.
+ * @returns Extracted text with most LaTeX content preserved.
  */
-const extractTextFromDocx = async (fileBuffer: Buffer, max_pages: number = 20): Promise<string> => {
-    console.log("in extract text from docx")
-    //TODO: make this work before allowing .docx files
-    // const pages = await DocxCounter.count(fileBuffer)
-    // console.log(pages)
-    // if (pages > max_pages) {
-    //     throw new Error(`Error: DOCX exceeds the ${max_pages}-page limit (Detected: ${pages} pages).`);
-    // }
-    const result = await mammoth.extractRawText({ buffer: fileBuffer });
-    return result.value; // Returns extracted text
+const extractTextFromLatex = async (fileBuffer: Buffer): Promise<string> => {
+  const latexContent = fileBuffer.toString("utf8");
+
+  return latexContent
+    .replace(/%.*$/gm, "")  // Remove comments
+    .replace(/\s+/g, " ")    // Normalize whitespace (optional)
+    .trim();
 };
 
-/**
- * Extracts text from a `.doc` file buffer.
- * @param fileBuffer - Buffer of the DOC file.
- * @returns Extracted text as a string.
- * @throws Error if text extraction fails.
- */
-const extractTextFromDoc = async (fileBuffer: Buffer, max_pages: number = 20): Promise<string> => {
-    //TODO: make this work before allowing .doc files
-    // const pages = await countPages(fileBuffer, 'docx')
-    // console.log(pages)
-    // if (pages > max_pages) {
-    //     throw new Error(`Error: DOCX exceeds the ${max_pages}-page limit (Detected: ${pages} pages).`);
-    // }
-    const document = await extractor.extract(fileBuffer);
-    return document.getBody();
+
+
+const extractTextFromZip = async (fileBuffer: Buffer): Promise<string> => {
+  const zip = await JSZip.loadAsync(fileBuffer);
+  let aggregatedText = "";
+  
+  // Array to hold files that match the extension criteria.
+  const texFiles: JSZip.JSZipObject[] = [];
+
+  // Iterate over all entries in the zip.
+  zip.forEach((relativePath, file) => {
+    // Log each file name for debugging purposes.
+    console.log("Found file:", relativePath);
+    
+    // Use path.extname to get the file extension.
+    const extension = extname(relativePath).toLowerCase();
+    if (!file.dir && (extension === ".tex" || extension === ".tec")) {
+      texFiles.push(file);
+    }
+  });
+
+  // If no valid LaTeX files are found, log all file names and throw an error.
+  if (texFiles.length === 0) {
+    console.error("Files present in ZIP:", Object.keys(zip.files));
+    throw new Error("No LaTeX (.tex or .tec) files found in the ZIP archive.");
+  }
+
+  // Process files concurrently for performance.
+  const fileTexts = await Promise.all(
+    texFiles.map(async (file) => {
+      const fileContent = await file.async("nodebuffer");
+      return extractTextFromLatex(fileContent);
+    })
+  );
+
+  return fileTexts.join("\n").trim();
 };
+
+
+
