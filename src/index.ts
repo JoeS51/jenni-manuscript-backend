@@ -6,7 +6,7 @@ import cors from 'cors';
 dotenv.config()
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = Number(process.env.PORT) || 8080;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -14,6 +14,6 @@ app.use(cors());
 
 app.use("/", indexRouter);
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server is running on port ${PORT}`)
 })
