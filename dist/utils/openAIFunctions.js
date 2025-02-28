@@ -8,48 +8,63 @@ const model = "gpt-4o-mini";
 /**
  * Validate the presence, completeness, relevance, and formatting of required sections
  * @param {string} manuscriptText - Extracted text from the uploaded manuscript
- * @param {string} journalType - Type of journal (IEEE, Nature, Lancet, etc.)
- * @param {string[]} requiredSections - List of sections required for the specified journal
+ * @param {string} journalData - Journal data from Supabase
  * @returns {Promise<string>} - Markdown formatted table with validation results
  */
-async function validateSections(manuscriptText, journalType, requiredSections) {
-    var _a, _b;
+async function validateSections(manuscriptText, journalData) {
+    var _a;
     const prompt = `
-    The user has selected the journal type "${journalType}". The required sections are:
-    ${requiredSections.join(", ")}.
+    You are an expert academic referee evaluating this manuscript for ${journalData.name}.
+    
+    Journal Requirements:
+    ${JSON.stringify(journalData.submission_requirements, null, 2)}
+    
+    Provide your evaluation in the following markdown format:
 
-    **Instructions:**
-    Evaluate each required section based on the following criteria:
-    - **Presence**: ✅ Present / ❌ Missing
-    - **Completeness**: ✅ Complete / ⚠️ Needs More Detail / ❌ Missing
-    - **Relevance**: ✅ Relevant / ⚠️ Somewhat Relevant / ❌ Not Relevant
-    - **Formatting**: ✅ Properly Formatted / ❌ Formatting Issue
-
-    **Return the response in Markdown table format** for structured readability.
-
-    **Example Output Format:**
-    \`\`\`markdown
-    | Section      | Presence   | Completeness   | Relevance   | Formatting  | Notes |
-    |-------------|------------|----------------|-------------|-------------|--------|
-    | Abstract    | ✅ Present  | ⚠️ Needs More Detail | ✅ Relevant  | ❌ Formatting Issue | Abstract is too short; IEEE suggests 150-250 words. |
-    | Methods     | ✅ Present  | ✅ Complete   | ✅ Relevant  | ✅ Properly Formatted  | Well-structured methodology section. |
-    | Discussion  | ❌ Missing  | ❌ N/A  | ❌ N/A | ❌ N/A | No discussion section detected. Consider adding one for result interpretation. |
-    \`\`\`
-
+    # Manuscript Evaluation Summary
+    
+    ## Overall Scores
+    | Section | Presence | Clarity (0-10) | Technical Depth (0-10) | Research Value (0-10) | Overall Score |
+    |---------|----------|----------------|----------------------|-------------------|---------------|
+    | Abstract | ✅/❌ | X | X | X | XX% |
+    ... (for each section)
+    
+    ## Detailed Section Analysis
+    
+    ### [Section Name]
+    #### Scores
+    - **Clarity & Organization**: X/10
+    - **Technical Depth**: X/10
+    - **Research Contribution**: X/10
+    
+    #### Strengths
+    - Point 1
+    - Point 2
+    
+    #### Areas for Improvement
+    - Issue 1
+    - Issue 2
+    
+    #### Recommendations
+    - Specific suggestion 1
+    - Specific suggestion 2
+    
+    [Repeat for each section]
+    
+    ## Compliance with Journal Requirements
+    | Requirement | Status | Comments |
+    |------------|--------|----------|
+    | [Req 1] | ✅/⚠️/❌ | Brief explanation |
+    
     Manuscript:
     ${manuscriptText}
     `;
     try {
-        const response = await openai.chat.completions.create({
-            model: model,
-            messages: [{ role: "user", content: prompt }],
+        const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: prompt }]
         });
-        let result = (_b = (_a = response.choices[0]) === null || _a === void 0 ? void 0 : _a.message) === null || _b === void 0 ? void 0 : _b.content.trim();
-        if (!result) {
-            console.warn("OpenAI returned an empty response for validateSections.");
-            result = "**Error: Could not process manuscript validation.**";
-        }
-        return result;
+        return ((_a = completion.choices[0].message) === null || _a === void 0 ? void 0 : _a.content.trim()) || "**Error: Could not process manuscript validation.**";
     }
     catch (error) {
         console.error("Error in validateSections:", error);
@@ -59,57 +74,62 @@ async function validateSections(manuscriptText, journalType, requiredSections) {
 /**
  * Provide general feedback on manuscript quality based on journal type
  * @param {string} manuscriptText - Extracted text from the uploaded manuscript
- * @param {string} journalType - Type of journal (IEEE, Nature, Lancet, etc.)
+ * @param {string} journalData - Journal data from Supabase
  * @returns {Promise<string>} - AI-generated feedback
  */
-async function getGeneralFeedback(manuscriptText, journalType) {
-    var _a, _b;
-    const prompts = {
-        "IEEE": `
-        Provide an **IEEE-standard** review of the manuscript below. Focus on:
-        - **Clarity & Logical Flow**: Are arguments structured logically?
-        - **Grammar & Spelling**: Identify any errors or awkward phrasing.
-        - **Technical Precision**: Are methods/results explained rigorously?
-        - **Improvements**: Suggest areas where writing or organization could be improved.
+async function getGeneralFeedback(manuscriptText, journalData) {
+    var _a;
+    const prompt = `
+    As an expert referee for ${journalData.name} (${journalData.publisher}), provide a comprehensive evaluation using this markdown format:
 
-        Manuscript:
-        ${manuscriptText}
-        `,
-        "Nature": `
-        Review the manuscript for **Nature journal** standards. Address:
-        - **Scientific Rigor**: Are findings well-supported?
-        - **Clarity & Style**: Is the language accessible for an interdisciplinary audience?
-        - **Logical Structure**: Does the paper flow well between sections?
-        - **Improvements**: Highlight areas where the manuscript could be refined.
+    # General Manuscript Assessment
+    
+    ## Executive Summary
+    [2-3 sentences on overall assessment]
+    
+    ## 1. Research Contribution
+    ### Strengths
+    - Point 1
+    - Point 2
+    
+    ### Concerns
+    - Issue 1
+    - Issue 2
+    
+    ### Score: X/10
+    
+    ## 2. Technical Quality
+    [Similar structure for each major aspect...]
+    
+    ## Recommendations
+    ### Major Revisions Required
+    1. [Critical change needed]
+    2. [Critical change needed]
+    
+    ### Minor Suggestions
+    1. [Minor improvement]
+    2. [Minor improvement]
+    
+    ## Final Verdict
+    [Clear statement on whether to accept/revise/reject]
+    
+    ---
+    
+    Evaluate based on:
+    1. Research Contribution
+    - Novel findings?
+    - Significant advancement?
+    [... rest of the evaluation criteria ...]
 
-        Manuscript:
-        ${manuscriptText}
-        `,
-        "Lancet": `
-        Evaluate the manuscript for **Lancet journal** publication standards. Focus on:
-        - **Medical Accuracy & Ethical Standards**
-        - **Writing Clarity & Readability**
-        - **Logical Flow of Argument**
-        - **Areas for Refinement**
-
-        Manuscript:
-        ${manuscriptText}
-        `
-    };
-    if (!prompts[journalType]) {
-        throw new Error(`Unsupported journal type: ${journalType}`);
-    }
+    Manuscript:
+    ${manuscriptText}
+    `;
     try {
-        const response = await openai.chat.completions.create({
-            model: model,
-            messages: [{ role: "user", content: prompts[journalType] }],
+        const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: prompt }]
         });
-        let result = (_b = (_a = response.choices[0]) === null || _a === void 0 ? void 0 : _a.message) === null || _b === void 0 ? void 0 : _b.content.trim();
-        if (!result) {
-            console.warn("OpenAI returned an empty response for getGeneralFeedback.");
-            result = "**Error: Could not process general feedback.**";
-        }
-        return result;
+        return ((_a = completion.choices[0].message) === null || _a === void 0 ? void 0 : _a.content.trim()) || "**Error: Could not process general feedback.**";
     }
     catch (error) {
         console.error("Error in getGeneralFeedback:", error);
