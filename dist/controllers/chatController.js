@@ -51,12 +51,19 @@ const upload = (0, multer_1.default)();
 const openai = new openai_1.default({
     apiKey: process.env.OPENAI_API_KEY
 });
-// Check environment variables
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-    console.error('Missing Supabase environment variables');
-    process.exit(1); // Exit if required environment variables are missing
+// Initialize Supabase with error handling
+let supabase;
+try {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+        throw new Error('Missing Supabase environment variables');
+    }
+    supabase = (0, supabase_js_1.createClient)(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 }
-const supabase = (0, supabase_js_1.createClient)(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+catch (error) {
+    console.error('Failed to initialize Supabase client:', error);
+    // Don't exit process, but log error
+    supabase = null;
+}
 const createReply = async (req, res) => {
     try {
         const { message } = req.body;
@@ -183,6 +190,10 @@ async function verifyJournalSubmission(content, journalName) {
 }
 const scrapeWebpage = async (req, res, next) => {
     try {
+        console.log('Received scrape request:', {
+            body: req.body,
+            headers: req.headers
+        });
         const { journalLink, journalName, journalManualRequirements } = req.body;
         if (!journalLink || !journalName || !(journalManualRequirements === null || journalManualRequirements === void 0 ? void 0 : journalManualRequirements.length)) {
             res.status(400).json({
@@ -224,6 +235,14 @@ const scrapeWebpage = async (req, res, next) => {
                 : [journalManualRequirements]
         };
         console.log("Formatted data for Supabase:", JSON.stringify(formattedData, null, 2));
+        // Check if Supabase client is initialized
+        if (!supabase) {
+            res.status(500).json({
+                error: "Database connection not available",
+                details: "Failed to initialize Supabase client"
+            });
+            return;
+        }
         const { data, error } = await supabase
             .from('journals')
             .insert(formattedData)

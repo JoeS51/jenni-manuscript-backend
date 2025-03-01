@@ -13,7 +13,14 @@ const model = "gpt-4o-mini";
  * @returns {Promise<string>} - Markdown formatted table with validation results
  */
 
+function truncateText(text, maxLength = 24000) {
+    // Using a larger chunk for GPT-4's context window
+    return text.length > maxLength ? text.substring(0, maxLength) + "... [truncated]" : text;
+}
+
 async function validateSections(manuscriptText, journalData) {
+    const truncatedText = truncateText(manuscriptText);
+    
     const prompt = `
     You are an expert academic referee evaluating this manuscript for ${journalData.name}.
     
@@ -49,21 +56,14 @@ async function validateSections(manuscriptText, journalData) {
     #### Recommendations
     - Specific suggestion 1
     - Specific suggestion 2
-    
-    [Repeat for each section]
-    
-    ## Compliance with Journal Requirements
-    | Requirement | Status | Comments |
-    |------------|--------|----------|
-    | [Req 1] | ✅/⚠️/❌ | Brief explanation |
-    
-    Manuscript:
-    ${manuscriptText}
+
+    Manuscript (truncated if necessary):
+    ${truncatedText}
     `;
 
     try {
         const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4", // Using GPT-4 for better analysis
             messages: [{ role: "user", content: prompt }]
         });
 
@@ -81,55 +81,22 @@ async function validateSections(manuscriptText, journalData) {
  * @returns {Promise<string>} - AI-generated feedback
  */
 async function getGeneralFeedback(manuscriptText, journalData) {
+    const truncatedText = truncateText(manuscriptText);
+    
     const prompt = `
-    As an expert referee for ${journalData.name} (${journalData.publisher}), provide a comprehensive evaluation using this markdown format:
+    As an expert referee for ${journalData.name} (${journalData.publisher}), provide a comprehensive evaluation.
+    Note: The manuscript text has been truncated for processing. Focus on visible content.
+    
+    Journal Context:
+    ${journalData.general_context}
 
-    # General Manuscript Assessment
-    
-    ## Executive Summary
-    [2-3 sentences on overall assessment]
-    
-    ## 1. Research Contribution
-    ### Strengths
-    - Point 1
-    - Point 2
-    
-    ### Concerns
-    - Issue 1
-    - Issue 2
-    
-    ### Score: X/10
-    
-    ## 2. Technical Quality
-    [Similar structure for each major aspect...]
-    
-    ## Recommendations
-    ### Major Revisions Required
-    1. [Critical change needed]
-    2. [Critical change needed]
-    
-    ### Minor Suggestions
-    1. [Minor improvement]
-    2. [Minor improvement]
-    
-    ## Final Verdict
-    [Clear statement on whether to accept/revise/reject]
-    
-    ---
-    
-    Evaluate based on:
-    1. Research Contribution
-    - Novel findings?
-    - Significant advancement?
-    [... rest of the evaluation criteria ...]
-
-    Manuscript:
-    ${manuscriptText}
+    Manuscript (truncated):
+    ${truncatedText}
     `;
 
     try {
         const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model: "gpt-3.5-turbo-16k", // Use 16k model for larger context
             messages: [{ role: "user", content: prompt }]
         });
 

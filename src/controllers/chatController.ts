@@ -18,16 +18,21 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-// Check environment variables
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-    console.error('Missing Supabase environment variables');
-    process.exit(1); // Exit if required environment variables are missing
+// Initialize Supabase with error handling
+let supabase;
+try {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+        throw new Error('Missing Supabase environment variables');
+    }
+    supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_ANON_KEY
+    );
+} catch (error) {
+    console.error('Failed to initialize Supabase client:', error);
+    // Don't exit process, but log error
+    supabase = null;
 }
-
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY
-);
 
 export const createReply: RequestHandler = async (req, res) => {
     try {
@@ -203,6 +208,11 @@ async function verifyJournalSubmission(content: string, journalName: string): Pr
 
 export const scrapeWebpage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+        console.log('Received scrape request:', {
+            body: req.body,
+            headers: req.headers
+        });
+
         const { journalLink, journalName, journalManualRequirements } = req.body;
 
         if (!journalLink || !journalName || !journalManualRequirements?.length) {
@@ -250,6 +260,15 @@ export const scrapeWebpage = async (req: Request, res: Response, next: NextFunct
         };
 
         console.log("Formatted data for Supabase:", JSON.stringify(formattedData, null, 2));
+
+        // Check if Supabase client is initialized
+        if (!supabase) {
+            res.status(500).json({
+                error: "Database connection not available",
+                details: "Failed to initialize Supabase client"
+            });
+            return;
+        }
 
         const { data, error } = await supabase
             .from('journals')
