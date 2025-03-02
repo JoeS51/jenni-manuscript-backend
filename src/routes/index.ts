@@ -1,22 +1,15 @@
-import { Router, Request, Response } from 'express';
-import { createReply, scrapeWebpage } from '../controllers/chatController';
-import { uploadFile } from '../controllers/fileUploadController';
+import express from "express";
 import multer from "multer";
+import { uploadFile } from "../controllers/fileUploadController";
+import { scrapeWebpage } from "../controllers/chatController";
 
-const router = Router();
-//for file upload
-const upload = multer();
+const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/', (req, res) => {
-    res.send("hello")
-});
+// File upload route
+router.post("/upload", upload.single("file"), uploadFile);
 
-
-router.post('/chat', createReply);
-router.post('/scrape', upload.none(), scrapeWebpage);
-
-
-router.post("/upload", upload.single('file'), uploadFile);
-
+// Journal scraping route
+router.post("/scrape", scrapeWebpage);
 
 export default router;

@@ -1,5 +1,6 @@
 import pdfParse from "pdf-parse";
 import JSZip from "jszip";
+import mammoth from "mammoth";
 import { extname } from "path";
 
 /**
@@ -25,10 +26,12 @@ export const extractTextFromFile = async (
     case "tec":
     case "latex":
       return extractTextFromLatex(fileBuffer);
+    case "docx":
+      return extractTextFromDocx(fileBuffer);
     case "zip":
       return extractTextFromZip(fileBuffer);
     default:
-      throw new Error("Unsupported file type. Supported formats are .pdf, .tex/.tec/.latex, and .zip");
+      throw new Error("Unsupported file type. Supported formats are .pdf, .docx, .tex/.tec/.latex, and .zip");
   }
 };
 /**
@@ -66,7 +69,14 @@ const extractTextFromLatex = async (fileBuffer: Buffer): Promise<string> => {
     .trim();
 };
 
-
+async function extractTextFromDocx(fileBuffer: Buffer): Promise<string> {
+  try {
+    const result = await mammoth.extractRawText({ buffer: fileBuffer });
+    return result.value.trim();
+  } catch (error) {
+    throw new Error("Failed to extract text from DOCX: " + error);
+  }
+}
 
 const extractTextFromZip = async (fileBuffer: Buffer): Promise<string> => {
   const zip = await JSZip.loadAsync(fileBuffer);

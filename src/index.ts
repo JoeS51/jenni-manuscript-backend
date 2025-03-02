@@ -1,10 +1,11 @@
+import dotenv from 'dotenv';
+// Load environment variables first
+dotenv.config();
+
 import express from "express";
-import dotenv from 'dotenv'
 import indexRouter from "./routes/index.js"
 import cors from 'cors';
 import bodyParser from 'body-parser';
-
-dotenv.config()
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8080;

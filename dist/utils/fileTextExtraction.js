@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.extractTextFromFile = void 0;
 const pdf_parse_1 = __importDefault(require("pdf-parse"));
 const jszip_1 = __importDefault(require("jszip"));
+const mammoth_1 = __importDefault(require("mammoth"));
 const path_1 = require("path");
 /**
  * Extracts text from a file buffer (.pdf, .tex/.tec, .zip).
@@ -25,10 +26,12 @@ const extractTextFromFile = async (fileBuffer, fileExtension, max_pages = 20) =>
         case "tec":
         case "latex":
             return extractTextFromLatex(fileBuffer);
+        case "docx":
+            return extractTextFromDocx(fileBuffer);
         case "zip":
             return extractTextFromZip(fileBuffer);
         default:
-            throw new Error("Unsupported file type. Supported formats are .pdf, .tex/.tec/.latex, and .zip");
+            throw new Error("Unsupported file type. Supported formats are .pdf, .docx, .tex/.tec/.latex, and .zip");
     }
 };
 exports.extractTextFromFile = extractTextFromFile;
@@ -65,6 +68,15 @@ const extractTextFromLatex = async (fileBuffer) => {
         .replace(/\s+/g, " ") // Normalize whitespace (optional)
         .trim();
 };
+async function extractTextFromDocx(fileBuffer) {
+    try {
+        const result = await mammoth_1.default.extractRawText({ buffer: fileBuffer });
+        return result.value.trim();
+    }
+    catch (error) {
+        throw new Error("Failed to extract text from DOCX: " + error);
+    }
+}
 const extractTextFromZip = async (fileBuffer) => {
     const zip = await jszip_1.default.loadAsync(fileBuffer);
     let aggregatedText = "";

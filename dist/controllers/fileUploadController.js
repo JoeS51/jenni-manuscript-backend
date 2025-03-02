@@ -9,8 +9,30 @@ const sendEmail_1 = require("../utils/sendEmail");
 const evaluateManuscript_1 = require("../utils/evaluateManuscript");
 const pdfOutput_1 = require("../utils/pdfOutput");
 const dotenv_1 = __importDefault(require("dotenv"));
+const supabase_js_1 = require("@supabase/supabase-js");
 dotenv_1.default.config();
 const MAX_PAGE_LIMIT = 25;
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Supabase URL and Anon Key must be defined in the environment variables.");
+}
+const supabase = (0, supabase_js_1.createClient)(supabaseUrl, supabaseAnonKey);
+// Function to log processed paper
+async function logProcessedPaper(inputFile, outputFile, journalName, userEmail) {
+    const { data, error } = await supabase
+        .from('processed_papers')
+        .insert([
+        { input_file: inputFile, output_file: outputFile, journal_name: journalName, user_email: userEmail }
+    ]);
+    if (error) {
+        console.error('Error logging processed paper:', error);
+    }
+    else {
+        console.log('Processed paper logged successfully:', data);
+    }
+}
 const uploadFile = async (req, res) => {
     if (!req.file) {
         res.status(400).send({ message: "No file uploaded" });
@@ -70,14 +92,19 @@ const uploadFile = async (req, res) => {
             }
             catch (err) {
                 console.error("🚨 Error sending email:", err);
-                res.status(500).json({
-                    message: "Error sending email",
-                    error: err instanceof Error ? err.message : String(err),
-                });
+                return;
             }
         }
+        // After processing the manuscript
+        const inputFile = extractedText; // Store the extracted text instead of the file name
+        const outputFile = JSON.stringify(manuscriptEvaluationText); // or however you want to format it
+        const journalName = req.body.journalType;
+        const userEmail = req.body.email; // Assuming the email is sent in the request body
+        // Log the processed paper
+        await logProcessedPaper(inputFile, outputFile, journalName, userEmail);
         res.status(200).json({
-            message: "File uploaded, text extracted, and email sent successfully",
+            message: "File processed successfully",
+            emailSent: req.body.email ? true : false,
             file: {
                 originalname: req.file.originalname,
                 mimetype: req.file.mimetype,
@@ -88,11 +115,12 @@ const uploadFile = async (req, res) => {
         });
     }
     catch (err) {
-        console.error("🚨 Error processing request:", err);
-        res.status(500).json({
-            message: "An error occurred",
-            error: err instanceof Error ? err.message : String(err),
-        });
+        if (!res.headersSent) {
+            res.status(500).json({
+                message: "An error occurred",
+                error: err instanceof Error ? err.message : String(err),
+            });
+        }
     }
 };
 exports.uploadFile = uploadFile;

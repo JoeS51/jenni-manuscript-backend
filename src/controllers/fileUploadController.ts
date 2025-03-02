@@ -4,10 +4,36 @@ import { sendEmailWithPDF } from "../utils/sendEmail";
 import { convertMarkdownToHTML, evaluateManuscript } from "../utils/evaluateManuscript";
 import { createPDFFromText } from "../utils/pdfOutput";
 import dotenv from "dotenv";
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
 const MAX_PAGE_LIMIT = 25;
+
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Supabase URL and Anon Key must be defined in the environment variables.");
+}
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Function to log processed paper
+async function logProcessedPaper(inputFile: string, outputFile: string, journalName: string, userEmail: string) {
+    const { data, error } = await supabase
+        .from('processed_papers')
+        .insert([
+            { input_file: inputFile, output_file: outputFile, journal_name: journalName, user_email: userEmail }
+        ]);
+
+    if (error) {
+        console.error('Error logging processed paper:', error);
+    } else {
+        console.log('Processed paper logged successfully:', data);
+    }
+}
 
 export const uploadFile = async (req: Request & { file?: Express.Multer.File }, res: Response): Promise<void> => {
     if (!req.file) {
@@ -75,15 +101,22 @@ export const uploadFile = async (req: Request & { file?: Express.Multer.File }, 
                 await sendEmailWithPDF(email, subject, pdfHtmlContent, pdfBuffer);
             } catch (err) {
                 console.error("🚨 Error sending email:", err);
-                res.status(500).json({
-                    message: "Error sending email",
-                    error: err instanceof Error ? err.message : String(err),
-                });
+                return;
             }
         }
 
+        // After processing the manuscript
+        const inputFile = extractedText; // Store the extracted text instead of the file name
+        const outputFile = JSON.stringify(manuscriptEvaluationText); // or however you want to format it
+        const journalName = req.body.journalType;
+        const userEmail = req.body.email; // Assuming the email is sent in the request body
+
+        // Log the processed paper
+        await logProcessedPaper(inputFile, outputFile, journalName, userEmail);
+
         res.status(200).json({
-            message: "File uploaded, text extracted, and email sent successfully",
+            message: "File processed successfully",
+            emailSent: req.body.email ? true : false,
             file: {
                 originalname: req.file.originalname,
                 mimetype: req.file.mimetype,
@@ -93,10 +126,11 @@ export const uploadFile = async (req: Request & { file?: Express.Multer.File }, 
             evaluatedText: manuscriptEvaluationText,
         });
     } catch (err) {
-        console.error("🚨 Error processing request:", err);
-        res.status(500).json({
-            message: "An error occurred",
-            error: err instanceof Error ? err.message : String(err),
-        });
+        if (!res.headersSent) {
+            res.status(500).json({
+                message: "An error occurred",
+                error: err instanceof Error ? err.message : String(err),
+            });
+        }
     }
 };
